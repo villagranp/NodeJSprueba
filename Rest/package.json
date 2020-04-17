@@ -13,7 +13,7 @@
     "body-parser": "^1.18.3",
     "express": "^4.16.2",
     "jsonwebtoken": "^8.2.2",
-    "jwt-simple": "^0.5.1",
+    "jwt-simple": "^0.5.3",
     "moment": "^2.22.2",
     "pg": "^7.4.3"
   },
