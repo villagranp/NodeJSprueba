@@ -10,7 +10,7 @@ const app = express()
 const port = process.env.PORT || 3000
 const conn = {	  user: 'liztex',
 				  host: '172.16.23.153',
-				  database: 'dbliztex1',
+				  database: 'dbliztex',
 				  password: 'golosin',
 				  port: 5432,
 				  client_encoding : 'utf8',
@@ -28,8 +28,11 @@ app.get('/api/token',(req, res) =>{
 		exp: moment().add(1 , 'hour' ).unix() ,
 	}
 
+	console.log(`Conectado`)
+
   	res .status(200) 
-		.send( {message: 'success',
+		.send( {
+				message: 'success',
 				token: jwt.encode(payload, 'clavetoken')})
 })
 
@@ -37,7 +40,7 @@ app.get('/api/token',(req, res) =>{
 app.get('/api/product',(req, res) =>{
 		let products = [];
 		const pool = new Pool(conn)
-			pool.query('SET CLIENT_ENCODING TO "SQL_ASCII"; SELECT lzty_variable, descrip, abr FROM lzty_variable ;', (err, resp) => {
+			pool.query('SET CLIENT_ENCODING TO "SQL_ASCII"; SELECT lzty_variable, descrip, abr FROM lzty_variable LIMIT 10;', (err, resp) => {
 			if (resp[1].rowCount < 1)
 			{
 				res .status(404) 
@@ -68,7 +71,17 @@ app.get('/api/product/:productId',(req, res) =>{
 					product: products })	
 	}
 	else{
-		pool.query(`SET CLIENT_ENCODING TO "SQL_ASCII"; SELECT lzty_variable, descrip, abr FROM lzty_variable  WHERE lzty_variable = ${req.params.productId};`, (err, resp) => {
+		pool.query(`SET CLIENT_ENCODING TO "SQL_ASCII"; 
+					SELECT * 
+					FROM ininventario 
+					WHERE lzty_articulo IN  (SELECT lzty_articulo 
+												FROM lzty_articulo 
+												WHERE abr = '${req.params.productId}')
+					LIMIT 10;`, (err, resp) => {
+			/*console.log(resp)
+			console.log('-----------------------------------------------------------------------------------------')
+			console.log(err)*/
+
 			if (resp[1].rowCount < 1)
 			{
 				res .status(404) 
@@ -78,9 +91,20 @@ app.get('/api/product/:productId',(req, res) =>{
 			else
 			{	
 				for (var i = resp[1].rows.length - 1; i >= 0; i--) {
-				  	products[i] = ({ id : resp[1].rows[i].lzty_variable, 
-				  					desc: resp[1].rows[i].descrip, 
-				  					abr : resp[1].rows[i].abr })
+				  	products[i] = ({ lzty_articulo 	: resp[1].rows[i].lzty_articulo, 
+				  					lzty_bodega		: resp[1].rows[i].lzty_bodega, 
+				  					lzty_ubicacion 	: resp[1].rows[i].lzty_ubicacion,
+				  					min 			: resp[1].rows[i].min,
+				  					max 			: resp[1].rows[i].max,
+				  					saldo			: resp[1].rows[i].saldo,
+				  					fvencimiento	: resp[1].rows[i].fvencimiento,
+				  					lzty_estado		: resp[1].rows[i].lzty_estado,
+				  					acativos		: resp[1].rows[i].acativos,
+				  					saldoi			: resp[1].rows[i].saldoi,
+				  					transac			: resp[1].rows[i].transac,
+				  					lzty_empresa	: resp[1].rows[i].lzty_empresa,
+				  					lzty_concepto	: resp[1].rows[i].lzty_concepto
+				  				})
 				  }
 				pool.end()
 			  	res .status(200) 
